@@ -1,70 +1,78 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import pathlib
 import re
-from typing import Dict, List
+from pathlib import Path
 
 import pandas as pd
 
+RATIO_MAP = {
+    "r0p05": 0.05,
+    "r0p1": 0.10,
+    "r1": 1.0,
+    "r10": 10.0,
+    "r100": 100.0,
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Aggregate experiment metrics into CSV files.")
-    parser.add_argument("--results-root", type=str, required=True, help="Root experiments folder.")
-    parser.add_argument("--out-csv", type=str, required=True, help="All-runs CSV output.")
-    parser.add_argument("--out-mean-csv", type=str, required=True, help="Mean/std CSV output.")
+    parser = argparse.ArgumentParser(description="Aggregate evaluation metrics.")
+    parser.add_argument("--results-root", required=True)
+    parser.add_argument("--out-csv", required=True)
+    parser.add_argument("--out-mean-csv", required=True)
     return parser.parse_args()
 
 
-def collect_json_files(root: pathlib.Path) -> List[pathlib.Path]:
-    return list(root.rglob("eval_results.json"))
+def parse_run(path: Path) -> dict:
+    text = str(path)
+    task = "unknown"
+    for candidate in ["core_promoter", "nontata_promoter", "promoter", "splice"]:
+        if f"/{candidate}/" in text or f"{candidate}_" in text:
+            task = candidate
+            break
 
+    ratio = None
+    seed = None
+    match = re.search(r"/(r(?:0p05|0p1|1|10|100)_seed(\d+))/", text)
+    if match:
+        ratio = RATIO_MAP.get(match.group(1).split("_seed")[0])
+        seed = int(match.group(2))
+    else:
+        match = re.search(r"_r(0p05|0p1|1|10|100)_seed(\d+)", text)
+        if match:
+            ratio = RATIO_MAP.get("r" + match.group(1))
+            seed = int(match.group(2))
 
-def extract_meta(path: pathlib.Path) -> Dict[str, str]:
-    parts = path.parts
-    method = "unknown"
-    ratio = "unknown"
-    seed = "unknown"
-    for p in parts:
-        if p in {"standard_ft", "lora_ft"}:
-            method = p
-        if re.fullmatch(r"r\d+", p):
-            ratio = p[1:]
-        if p.startswith("seed"):
-            seed = p.replace("seed", "")
-    return {"method": method, "ratio_percent": ratio, "seed": seed}
+    return {"task": task, "ratio_percent": ratio, "seed": seed}
 
 
 def main() -> int:
     args = parse_args()
-    results_root = pathlib.Path(args.results_root)
-    out_csv = pathlib.Path(args.out_csv)
-    out_mean_csv = pathlib.Path(args.out_mean_csv)
+    results_root = Path(args.results_root)
+    out_csv = Path(args.out_csv)
+    out_mean_csv = Path(args.out_mean_csv)
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     out_mean_csv.parent.mkdir(parents=True, exist_ok=True)
 
     rows = []
-    for fpath in collect_json_files(results_root):
-        data = json.loads(fpath.read_text())
-        meta = extract_meta(fpath)
-        row = {"file": str(fpath), **meta}
-        row.update(data)
+    for path in sorted(results_root.rglob("eval_results.json")):
+        row = {"file": str(path), **parse_run(path)}
+        row.update(json.loads(path.read_text()))
         rows.append(row)
 
     if not rows:
-        print("No eval_results.json files found.")
-        return 1
+        raise SystemExit(f"No eval_results.json files found under {results_root}")
 
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows).sort_values(["task", "ratio_percent", "seed"], na_position="last")
     df.to_csv(out_csv, index=False)
 
     metric_cols = [c for c in df.columns if c.startswith("eval_")]
-    grouped = df.groupby(["method", "ratio_percent"])[metric_cols].agg(["mean", "std"]).reset_index()
-    grouped.columns = ["_".join(col).strip("_") for col in grouped.columns.values]
-    grouped.to_csv(out_mean_csv, index=False)
+    summary = df.groupby(["task", "ratio_percent"])[metric_cols].agg(["mean", "std"]).reset_index()
+    summary.columns = ["_".join(map(str, col)).strip("_") for col in summary.columns]
+    summary.to_csv(out_mean_csv, index=False)
 
-    print(f"Saved all runs: {out_csv}")
-    print(f"Saved mean/std: {out_mean_csv}")
+    print(f"Saved: {out_csv}")
+    print(f"Saved: {out_mean_csv}")
     return 0
 
 

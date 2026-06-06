@@ -22,9 +22,6 @@ def main() -> int:
     print("\n=== Packages ===")
     for pkg in ["torch", "transformers", "pandas", "numpy", "sklearn", "yaml"]:
         _check_package(pkg)
-    print("\n=== Optional Packages ===")
-    _check_package("peft")
-
     print("\n=== Compute ===")
     try:
         import torch

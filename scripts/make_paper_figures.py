@@ -5,11 +5,12 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Rectangle
 
-RESULTS = Path(__file__).resolve().parents[1]
-OUT = Path(__file__).resolve().parent
-OUT.mkdir(parents=True, exist_ok=True)
-SUMMARY = OUT / 'paper_main_results_summary.csv'
-COMBINED = OUT / 'paper_main_runs_combined.csv'
+ROOT = Path(__file__).resolve().parents[1]
+RESULTS = ROOT / 'results'
+FIGURES = ROOT / 'figures'
+FIGURES.mkdir(parents=True, exist_ok=True)
+SUMMARY = RESULTS / 'paper_figures' / 'paper_main_results_summary.csv'
+COMBINED = RESULTS / 'paper_figures' / 'paper_main_runs_combined.csv'
 RESOURCE = RESULTS / 'resource_analysis' / 'paper_table_resource_usage_real.csv'
 
 mpl.rcParams.update({
@@ -47,8 +48,8 @@ GRID = '#D8DEE9'
 
 
 def savefig(fig, stem, dpi=450):
-    for ext in ['pdf', 'svg', 'png']:
-        fig.savefig(OUT / f'{stem}.{ext}', bbox_inches='tight', dpi=dpi)
+    for ext in ['pdf', 'png']:
+        fig.savefig(FIGURES / f'{stem}.{ext}', bbox_inches='tight', dpi=dpi)
     plt.close(fig)
 
 
@@ -201,6 +202,4 @@ if __name__ == '__main__':
     fig2_f1_trends()
     fig3_practical_drop_heatmap()
     fig4_resource_profile()
-    for old in OUT.glob('paper_fig2_f1_heatmap.*'):
-        old.unlink()
-    print(f'Wrote figures to {OUT}')
+    print(f'Wrote figures to {FIGURES}')

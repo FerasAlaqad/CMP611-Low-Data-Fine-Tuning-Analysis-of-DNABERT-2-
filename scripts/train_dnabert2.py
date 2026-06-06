@@ -6,30 +6,19 @@ import os
 import platform
 import time
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Sequence, Tuple, Union
+from typing import Dict, Optional, Sequence, Tuple
 
 import numpy as np
 import sklearn
 import torch
 import transformers
 
-try:
-    from peft import LoraConfig, get_peft_model
-except Exception:
-    # Allow non-LoRA runs even if peft/accelerate versions are mismatched.
-    LoraConfig = None
-    get_peft_model = None
 from torch.utils.data import Dataset
 
 
 @dataclass
 class ModelArguments:
     model_name_or_path: str = field(default="zhihan1996/DNABERT-2-117M")
-    use_lora: bool = field(default=False)
-    lora_r: int = field(default=8)
-    lora_alpha: int = field(default=16)
-    lora_dropout: float = field(default=0.05)
-    lora_target_modules: str = field(default="query,value")
 
 
 @dataclass
@@ -161,23 +150,18 @@ def train() -> None:
     test_dataset = SupervisedDataset(os.path.join(data_args.data_path, "test.csv"), tokenizer)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
-    # Use base BertConfig to avoid config-class mismatch with remote-code dynamic modules.
     from transformers.models.bert.configuration_bert import BertConfig
 
     config = BertConfig.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
-    # Some remote DNABERT-2 config revisions may miss pad token metadata in newer HF versions.
     if getattr(config, "pad_token_id", None) is None:
         config.pad_token_id = tokenizer.pad_token_id
     if getattr(config, "eos_token_id", None) is None and tokenizer.eos_token_id is not None:
         config.eos_token_id = tokenizer.eos_token_id
     if getattr(config, "bos_token_id", None) is None and tokenizer.bos_token_id is not None:
         config.bos_token_id = tokenizer.bos_token_id
-    # DNABERT-2 remote code uses Triton flash-attn when attention dropout is 0.
-    # On some Colab GPUs (e.g., T4), Triton kernel can exceed shared-memory limits.
-    # Force non-zero attention dropout to use the safe PyTorch attention path.
     if getattr(config, "attention_probs_dropout_prob", 0.0) == 0.0:
         config.attention_probs_dropout_prob = 0.1
     config.num_labels = train_dataset.num_labels
@@ -188,24 +172,6 @@ def train() -> None:
         trust_remote_code=True,
         config=config,
     )
-
-    if model_args.use_lora:
-        if LoraConfig is None or get_peft_model is None:
-            raise ImportError(
-                "LoRA is requested but peft is not available. "
-                "Install compatible versions of peft/accelerate."
-            )
-        lora_cfg = LoraConfig(
-            r=model_args.lora_r,
-            lora_alpha=model_args.lora_alpha,
-            target_modules=list(model_args.lora_target_modules.split(",")),
-            lora_dropout=model_args.lora_dropout,
-            bias="none",
-            task_type="SEQ_CLS",
-            inference_mode=False,
-        )
-        model = get_peft_model(model, lora_cfg)
-        model.print_trainable_parameters()
 
     trainer = transformers.Trainer(
         model=model,
@@ -237,7 +203,6 @@ def train() -> None:
             "per_device_train_batch_size": training_args.per_device_train_batch_size,
             "gradient_accumulation_steps": training_args.gradient_accumulation_steps,
             "fp16": training_args.fp16,
-            "use_lora": model_args.use_lora,
             "python_version": platform.python_version(),
             "platform": platform.platform(),
             "cuda_available": torch.cuda.is_available(),

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate runtime / compute usage from train_results.json and eval_results.json.
-
-New runs generated after the post-presentation patch save train_results.json.
-For older runs, only eval_runtime may be available; those rows are retained but
-marked as missing train runtime.
-"""
+"""Aggregate runtime and GPU-memory metrics from training outputs."""
 
 import argparse
 import json
@@ -98,8 +93,6 @@ def main() -> int:
         "# Compute Usage Analysis",
         "",
         f"Rows: {len(df)}",
-        "",
-        "If `has_train_results_json` is false, that run was produced before train-resource logging was added. Re-run the selected grid to measure training cost.",
         "",
         "## Summary",
         "",
