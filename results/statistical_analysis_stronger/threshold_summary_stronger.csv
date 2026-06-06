@@ -1,0 +1,5 @@
+task,lowest_ratio_mean_drop_lt_0p05,drop_at_10pct,retained_at_10pct,sign_p_at_10pct,note
+promoter,1.0,0.014816446187692475,0.9839088288844284,0.125,effect-size threshold; exact sign test underpowered with n=3
+core_promoter,10.0,0.02094809084367773,0.9743783459979465,0.125,effect-size threshold; exact sign test underpowered with n=3
+nontata_promoter,100.0,0.06500477054877252,0.9265959080782493,0.125,effect-size threshold; exact sign test underpowered with n=3
+splice,100.0,0.21475972908860477,0.7580819215096547,0.125,effect-size threshold; exact sign test underpowered with n=3

@@ -1,0 +1,41 @@
+# macOS / Python / notebooks
+.DS_Store
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+
+# Large or reproducible runtime artifacts
+data/
+outputs/
+checkpoints/
+models/
+wandb/
+cache/
+*.pt
+*.pth
+*.safetensors
+*.bin
+
+# LaTeX sources/snippets and final manuscript files are intentionally excluded for now.
+*.tex
+# The paper LaTeX and final PDF will be added later when ready.
+final_paper_acm_draft.tex
+final_paper_acm_draft.pdf
+paper/final_paper*.tex
+paper/final_paper*.pdf
+**/final_paper_acm_draft.tex
+**/final_paper_acm_draft.pdf
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.xdv
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
