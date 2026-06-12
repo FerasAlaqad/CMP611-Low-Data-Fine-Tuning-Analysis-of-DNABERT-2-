@@ -177,27 +177,6 @@ python scripts/make_paper_figures.py
 
 This regenerates Figure 2, Figure 3, and Figure 4 from the CSV tables under `results/`. Figure 1 is included as a final static manuscript asset because it was designed separately as an experimental-design schematic.
 
-## Existing Result Tables
-
-The repository already includes the final aggregate tables used in the manuscript:
-
-- `results/final_epoch_all_seeds_combined.csv`
-- `results/final_epoch_all_seeds_summary_mean_std.csv`
-- `results/statistical_analysis_stronger/paired_drop_stronger_stats.csv`
-- `results/statistical_analysis_stronger/threshold_summary_stronger.csv`
-- `results/resource_analysis/paper_table_resource_usage_real.csv`
-- `results/resource_analysis/real_resource_reduction_by_task_ratio.csv`
-
-These files allow the paper tables and quantitative figures to be reproduced without rerunning the full GPU training grid.
-
-## Notes on Reproducibility
-
-- Raw datasets are not committed; the notebook and scripts document how they are obtained.
-- Model checkpoints are not committed; DNABERT-2 is downloaded from Hugging Face at runtime.
-- Training outputs under `outputs/` are ignored because they are large runtime artifacts.
-- Final result CSVs and paper figures are tracked because they are small and needed to verify the reported analysis.
-- The final manuscript PDF is submitted separately from this code repository.
-
 ## Limitations of This Repository
 
 This repository reproduces the reported DNABERT-2 fine-tuning workflow and analysis. It does not include external model baselines, motif-level interpretation, class-wise error analysis, or full checkpoint artifacts.
