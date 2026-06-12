@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Rectangle
+from matplotlib.patches import Rectangle
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / 'results'
@@ -51,41 +51,6 @@ def savefig(fig, stem, dpi=450):
     for ext in ['pdf', 'png']:
         fig.savefig(FIGURES / f'{stem}.{ext}', bbox_inches='tight', dpi=dpi)
     plt.close(fig)
-
-
-def fig1_pipeline():
-    fig, ax = plt.subplots(figsize=(7.7, 2.25))
-    ax.set_axis_off()
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-
-    boxes = [
-        (0.025, 0.36, 0.155, 0.34, 'Dataset splits', '4 tasks\ntrain/dev/test'),
-        (0.225, 0.36, 0.155, 0.34, 'Train only', '0.05, 0.1, 1\n10, 100%'),
-        (0.425, 0.36, 0.155, 0.34, 'Fine-tuning', 'DNABERT-2\nseeds 13/42/3407'),
-        (0.625, 0.36, 0.155, 0.34, 'Test eval.', 'fixed test\nF1, AUROC, AUPRC'),
-        (0.825, 0.36, 0.155, 0.34, 'Analysis', 'mean/std\nΔF1 + resources'),
-    ]
-    for x, y, w, h, head, body in boxes:
-        patch = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.012,rounding_size=0.018',
-                               linewidth=0.85, edgecolor='#4C566A', facecolor='#F8FAFC')
-        ax.add_patch(patch)
-        ax.text(x + w/2, y + h*0.68, head, ha='center', va='center', fontsize=8.0,
-                fontweight='bold', color=NEUTRAL)
-        ax.text(x + w/2, y + h*0.35, body, ha='center', va='center', fontsize=6.8,
-                color='#4C566A', linespacing=1.18)
-    for i in range(len(boxes)-1):
-        x1 = boxes[i][0] + boxes[i][2]
-        x2 = boxes[i+1][0]
-        y = 0.53
-        ax.add_patch(FancyArrowPatch((x1+0.012, y), (x2-0.012, y), arrowstyle='-|>', mutation_scale=8,
-                                     linewidth=0.85, color='#4C566A'))
-
-    ax.text(0.5, 0.20, 'dev/test fixed; train split changes only', ha='center', va='center',
-            fontsize=7.4, color='#4C566A')
-    ax.text(0.5, 0.105, '4 tasks x 5 ratios x 3 seeds = 60 fine-tuning runs; resource profile measured on seed 13',
-            ha='center', va='center', fontsize=7.0, color='#5E6778')
-    savefig(fig, 'paper_fig1_pipeline')
 
 
 def fig2_f1_trends():
@@ -198,8 +163,7 @@ def fig4_resource_profile():
 
 
 if __name__ == '__main__':
-    fig1_pipeline()
     fig2_f1_trends()
     fig3_practical_drop_heatmap()
     fig4_resource_profile()
-    print(f'Wrote figures to {FIGURES}')
+    print(f'Wrote quantitative figures to {FIGURES}')
